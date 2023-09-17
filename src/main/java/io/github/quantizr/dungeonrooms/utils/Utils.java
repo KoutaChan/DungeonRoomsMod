@@ -18,6 +18,8 @@
 
 package io.github.quantizr.dungeonrooms.utils;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.github.quantizr.dungeonrooms.DungeonRooms;
 import io.github.quantizr.dungeonrooms.handlers.ScoreboardHandler;
 import net.minecraft.client.Minecraft;
@@ -25,6 +27,7 @@ import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,11 +38,8 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URL;
+import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.zip.InflaterInputStream;
@@ -52,6 +52,7 @@ public class Utils {
     /**
      * Taken from Danker's Skyblock Mod under the GNU General Public License v3.0
      * https://github.com/bowser0000/SkyblockMod/blob/master/LICENSE
+     *
      * @author bowser0000
      */
     public static void checkForSkyblock() {
@@ -76,6 +77,7 @@ public class Utils {
     /**
      * Taken from Danker's Skyblock Mod under the GNU General Public License v3.0
      * https://github.com/bowser0000/SkyblockMod/blob/master/LICENSE
+     *
      * @author bowser0000
      */
     public static void checkForCatacombs() {
@@ -118,7 +120,7 @@ public class Utils {
     /**
      * @return List of the paths to every .skeleton room data file
      */
-    public static List<Path> getAllPaths (String folderName) {
+    public static List<Path> getAllPaths(String folderName) {
         List<Path> paths = new ArrayList<>();
         try {
             URI uri = DungeonRooms.class.getResource("/assets/dungeonrooms/" + folderName).toURI();
@@ -131,7 +133,7 @@ public class Utils {
                 Path = Paths.get(uri);
             }
             Stream<Path> walk = Files.walk(Path, 3);
-            for (Iterator<Path> it = walk.iterator(); it.hasNext();) {
+            for (Iterator<Path> it = walk.iterator(); it.hasNext(); ) {
                 Path path = it.next();
                 String name = path.getFileName().toString();
                 if (name.endsWith(".skeleton")) paths.add(path);
@@ -145,9 +147,10 @@ public class Utils {
 
     /**
      * Converts the .skeleton files into a readable format.
+     *
      * @return room data as a hashmap
      */
-    public static HashMap<String, long[]> pathsToRoomData (String parentFolder, List<Path> allPaths) {
+    public static HashMap<String, long[]> pathsToRoomData(String parentFolder, List<Path> allPaths) {
         HashMap<String, long[]> allRoomData = new HashMap<>();
         try {
             for (Path path : allPaths) {
@@ -188,10 +191,11 @@ public class Utils {
     /**
      * Packs block info into a single 8 byte primitive long. Normally, first pair of bytes will be x coordinate, second
      * pair will be y coordinate, third pair will be z coordinate, and last pair will be block id and metadata.
+     *
      * @return primitive long containing block info
      */
     public static long shortToLong(short a, short b, short c, short d) {
-        return ((long)((a << 16) | (b & 0xFFFF)) << 32) | (((c << 16) | (d & 0xFFFF)) & 0xFFFFFFFFL);
+        return ((long) ((a << 16) | (b & 0xFFFF)) << 32) | (((c << 16) | (d & 0xFFFF)) & 0xFFFFFFFFL);
     }
 
     /**
@@ -199,5 +203,45 @@ public class Utils {
      */
     public static short[] longToShort(long l) {
         return new short[]{(short) (l >> 48), (short) (l >> 32), (short) (l >> 16), (short) (l)};
+    }
+
+    public static void loadWaypoints(Gson gson) throws IOException {
+        final File secretFile = DungeonRooms.secretFile;
+        try (BufferedReader waypointsReader = new BufferedReader(new InputStreamReader(secretFile.exists() && secretFile.isFile()
+                ? new FileInputStream(secretFile)
+                : Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation("dungeonrooms", "secretlocations.json")).getInputStream()))) {
+            loadWaypoints(gson, waypointsReader);
+        }
+    }
+
+    public static void loadWaypoints(Gson gson, BufferedReader waypointsReader) {
+        DungeonRooms.waypointsJson = gson.fromJson(waypointsReader, JsonObject.class);
+    }
+
+    public static void copyWaypoints() throws IOException {
+        try (InputStream stream = DungeonRooms.class.getResourceAsStream("/assets/dungeonrooms/secretlocations.json")) {
+            copyWaypoints(stream);
+        }
+    }
+
+    public static void resetWaypoints() throws IOException {
+        copyWaypoints();
+        loadWaypoints(new Gson());
+    }
+
+    public static void copyWaypoints(InputStream stream) throws IOException {
+        final File to = DungeonRooms.secretFile;
+        if (!to.getParentFile().exists()) {
+            to.getParentFile().mkdirs();
+        }
+        Files.copy(stream, to.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public static void importWaypoints(String url) throws IOException {
+        try (InputStream stream = new URL(url).openStream();
+             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream))) {
+            loadWaypoints(new Gson(), bufferedReader);
+            copyWaypoints(stream);
+        }
     }
 }

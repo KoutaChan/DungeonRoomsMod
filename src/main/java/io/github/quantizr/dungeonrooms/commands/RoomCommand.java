@@ -43,12 +43,13 @@ import net.minecraft.world.World;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.net.URL;
+import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class RoomCommand extends CommandBase {
 
@@ -183,7 +184,36 @@ public class RoomCommand extends CommandBase {
                             break;
                     }
                     break;
-
+                case "import": {
+                    if (arg1.length == 1) {
+                        player.addChatMessage(new ChatComponentText("\n"+ EnumChatFormatting.GOLD + " Dungeon Rooms Mod Import Commands:" + "\n"
+                                + EnumChatFormatting.AQUA + " /room import reset" + EnumChatFormatting.WHITE + " - Reset waypoint locations.\n"
+                                + EnumChatFormatting.AQUA + " /room import [Paste the URL]" + EnumChatFormatting.WHITE + " - Import waypoint locations from a URL.\n"));
+                    } else if (arg1[1].equalsIgnoreCase("reset")) {
+                        try {
+                            Utils.resetWaypoints();
+                            player.addChatMessage(new ChatComponentText(EnumChatFormatting.GREEN +
+                                    "Successfully to reset waypoints"));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED +
+                                    "Failed to reset waypoints"));
+                        }
+                    } else {
+                        new Thread(() -> {
+                            try {
+                                Utils.importWaypoints(arg1[1]);
+                                player.addChatMessage(new ChatComponentText(EnumChatFormatting.GREEN +
+                                        "Successfully to import waypoints"));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED +
+                                        "Failed to import waypoints"));
+                            }
+                        }).start();
+                    }
+                    break;
+                }
                 case "wp":
                 case "waypoint":
                 case "waypoints":

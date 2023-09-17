@@ -34,7 +34,6 @@ import io.github.quantizr.dungeonrooms.utils.Utils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.util.ChatComponentText;
@@ -94,12 +93,14 @@ public class DungeonRooms
 
     public static List<String> motd = null;
     public static String configDir;
+    public static File secretFile;
     public static boolean firstLogin = false;
 
     @EventHandler
     public void preInit(final FMLPreInitializationEvent event) {
         ClientCommandHandler.instance.registerCommand(new RoomCommand());
         configDir = event.getModConfigurationDirectory().toString();
+        secretFile = new File(configDir,"dungeonrooms/secretlocations.json");
 
         //initialize logger
         logger = LogManager.getLogger(DungeonRooms.class);
@@ -138,24 +139,26 @@ public class DungeonRooms
         for (KeyBinding keyBinding : keyBindings) {
             ClientRegistry.registerKeyBinding(keyBinding);
         }
-
-        //get room and waypoint info
+        // custom secret locations
+        if (!secretFile.exists()) {
+            try {
+                Utils.copyWaypoints();
+            } catch (IOException e) {
+                e.printStackTrace();
+                logger.warn("DungeonRooms: Failed to copy secretlocations.json (target=" + DungeonRooms.secretFile + ")");
+            }
+        }
         try (BufferedReader roomsReader = new BufferedReader(new InputStreamReader(mc.getResourceManager()
-                .getResource(new ResourceLocation("dungeonrooms", "dungeonrooms.json")).getInputStream()));
-            BufferedReader waypointsReader = new BufferedReader(new InputStreamReader(mc.getResourceManager()
-                .getResource(new ResourceLocation("dungeonrooms", "secretlocations.json")).getInputStream()))
-        ) {
+                .getResource(new ResourceLocation("dungeonrooms", "dungeonrooms.json")).getInputStream()))) {
             Gson gson = new Gson();
             roomsJson = gson.fromJson(roomsReader, JsonObject.class);
             logger.info("DungeonRooms: Loaded dungeonrooms.json");
 
-            waypointsJson = gson.fromJson(waypointsReader, JsonObject.class);
+            Utils.loadWaypoints(gson);
             logger.info("DungeonRooms: Loaded secretlocations.json");
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
         //set RoomData to futures - this will block if the rest of init was fast
         try {
             long time2 = System.currentTimeMillis();
