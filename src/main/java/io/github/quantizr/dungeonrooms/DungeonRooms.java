@@ -158,6 +158,7 @@ public class DungeonRooms
             logger.info("DungeonRooms: Loaded secretlocations.json");
         } catch (IOException e) {
             e.printStackTrace();
+            Utils.loadWaypointsFromAssets();
         }
         //set RoomData to futures - this will block if the rest of init was fast
         try {

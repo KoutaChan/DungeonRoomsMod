@@ -214,6 +214,15 @@ public class Utils {
         }
     }
 
+    public static void loadWaypointsFromAssets() {
+        try (BufferedReader waypointsReader = new BufferedReader(
+                new InputStreamReader(Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation("dungeonrooms", "secretlocations.json")).getInputStream()))) {
+            loadWaypoints(new Gson(), waypointsReader);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public static void loadWaypoints(Gson gson, BufferedReader waypointsReader) {
         DungeonRooms.waypointsJson = gson.fromJson(waypointsReader, JsonObject.class);
     }
