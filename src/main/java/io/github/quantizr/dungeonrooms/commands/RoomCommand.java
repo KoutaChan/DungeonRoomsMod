@@ -598,6 +598,33 @@ public class RoomCommand extends CommandBase {
                                             null
                                     );
                             break;
+                        case "stonk":
+                            if (mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && mc.objectMouseOver.getBlockPos() != null) {
+                                BlockPos viewingPos = MapUtils.actualToRelative(mc.objectMouseOver.getBlockPos(), RoomDetection.roomDirection, RoomDetection.roomCorner);
+                                player.addChatMessage(new ChatComponentText("{\n" +
+                                        "  \"secretName\":\"# - Stonk\",\n" +
+                                        "  \"category\":\"stonk\",\n" +
+                                        "  \"x\":" + viewingPos.getX() + ",\n" +
+                                        "  \"y\":" + viewingPos.getY() + ",\n" +
+                                        "  \"z\":" + viewingPos.getZ() + "\n" +
+                                        "}"));
+                                Toolkit.getDefaultToolkit()
+                                        .getSystemClipboard()
+                                        .setContents(
+                                                new StringSelection("{\n" +
+                                                        "  \"secretName\":\"# - Stonk\",\n" +
+                                                        "  \"category\":\"stonk\",\n" +
+                                                        "  \"x\":" + viewingPos.getX() + ",\n" +
+                                                        "  \"y\":" + viewingPos.getY() + ",\n" +
+                                                        "  \"z\":" + viewingPos.getZ() + "\n" +
+                                                        "}"),
+                                                null
+                                        );
+
+                            } else {
+                                player.addChatMessage(new ChatComponentText("You are not looking at anything"));
+                            }
+                            break;
                         default:
                             player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED
                                     + "Dungeon Rooms: Valid options are <chest | wither | superboom | lever | fairysoul | item | entrance | bat | stonk>"));
