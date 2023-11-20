@@ -34,7 +34,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.Blocks;
 import net.minecraft.network.play.server.S0DPacketCollectItem;
-import net.minecraft.network.play.server.S23PacketBlockChange;
 import net.minecraft.network.play.server.S24PacketBlockAction;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
@@ -213,11 +212,11 @@ public class Waypoints {
         if (event.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
             Block block = event.world.getBlockState(event.pos).getBlock();
             // For a locked chest, but it may be unstable due to lag.
-            if (block == Blocks.chest || block == Blocks.trapped_chest) {
+            if (block == Blocks.chest) {
                 lastClicked = event.pos;
                 return;
             }
-            if (block != Blocks.skull) return;
+            if (block != Blocks.skull && block != Blocks.trapped_chest) return;
             String roomName = RoomDetection.roomName;
             if (roomName.equals("undefined") || DungeonRooms.roomsJson.get(roomName) == null || secretsList == null) return;
             if (DungeonRooms.waypointsJson.get(roomName) != null) {
@@ -293,17 +292,7 @@ public class Waypoints {
                     }
                 }
             }
-        } else if (event.packet instanceof S23PacketBlockChange) {
-            S23PacketBlockChange packet = (S23PacketBlockChange) event.packet;
-            // Do nothing if someone else has possibly opened the chest in order to follow Hypixel rules
-            if (lastClicked == null || !packet.getBlockPosition().equals(lastClicked))
-                return;
-            // Detect mimic
-            if (packet.getBlockState().getBlock() == Blocks.air) {
-                disableWayPoint(packet.getBlockPosition(), "chest");
-                lastClicked = null;
-            }
-        } else if (event.packet instanceof S24PacketBlockAction) {
+        } if (event.packet instanceof S24PacketBlockAction) {
             S24PacketBlockAction packet = (S24PacketBlockAction) event.packet;
             // Do nothing if someone else has possibly opened the chest in order to follow Hypixel rules
             if (lastClicked == null || !packet.getBlockPosition().equals(lastClicked))
