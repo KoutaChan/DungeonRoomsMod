@@ -168,6 +168,7 @@ public class DungeonManager {
 
         if (RoomDetection.stage2Executor != null) RoomDetection.stage2Executor.shutdown();
 
+        Waypoints.lastClicked = null;
         Waypoints.allSecretsMap.clear();
 
         RoomDetection.resetCurrentRoom();
